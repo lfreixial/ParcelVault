@@ -7,6 +7,17 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine@sha256:f9cf3e1f0066f0eb0c48707d864f0ac5941e9ff454a072077d97a4d278d07d73
+        env:
+          POSTGRES_DB: parcelvault_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd pg_isready --health-interval 2s
+          --health-timeout 3s --health-retries 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -24,6 +35,10 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
           "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="--all"
       - run: mise run check
+      - name: Exercise PostgreSQL storage
+        env:
+          PARCELVAULT_TEST_POSTGRES_DSN: postgres://postgres@127.0.0.1:${{ job.services.postgres.ports[5432] }}/parcelvault_test?sslmode=disable
+        run: mise exec -- go test -race -count=1 ./internal/database
       - name: Reject invalid configuration without logging its value
         run: |
           exit_code=0
