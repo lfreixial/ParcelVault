@@ -8,9 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/lfreixial/ParcelVault/internal/api"
 	"github.com/lfreixial/ParcelVault/internal/config"
+	"github.com/lfreixial/ParcelVault/internal/database"
 	"github.com/lfreixial/ParcelVault/internal/server"
 )
 
@@ -31,10 +33,25 @@ func run(ctx context.Context, logger *slog.Logger, level *slog.LevelVar) error {
 		return err
 	}
 	level.Set(cfg.LogLevel)
+	startup, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	db, err := database.Open(startup, cfg.DatabaseDriver, cfg.DatabaseSource)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	if err := database.Migrate(startup, db, cfg.DatabaseDriver); err != nil {
+		return err
+	}
+	cancel()
 	ln, err := net.Listen("tcp", cfg.ListenAddr)
 	if err != nil {
 		return errors.New("cannot bind HTTP listener")
 	}
-	handler := api.New(func() bool { return ctx.Err() == nil })
+	handler := api.New(func(request context.Context) bool {
+		probe, cancel := context.WithTimeout(request, time.Second)
+		defer cancel()
+		return ctx.Err() == nil && db.PingContext(probe) == nil
+	})
 	return server.Run(ctx, ln, handler, cfg.ShutdownTimeout, logger)
 }

@@ -16,6 +16,8 @@ type Config struct {
 	ListenAddr      string
 	LogLevel        slog.Level
 	ShutdownTimeout time.Duration
+	DatabaseDriver  string
+	DatabaseSource  string
 }
 
 const maxFileSize = 64 << 10
@@ -25,6 +27,9 @@ func Load() (Config, error) {
 		"listen_addr":      "127.0.0.1:8080",
 		"log_level":        "info",
 		"shutdown_timeout": "10s",
+		"database_driver":  "sqlite",
+		"sqlite_path":      "data/parcelvault.db",
+		"postgres_dsn":     "",
 	}
 	if path, ok := os.LookupEnv("PARCELVAULT_CONFIG_FILE"); ok {
 		if err := readFile(path, values); err != nil {
@@ -58,7 +63,23 @@ func Load() (Config, error) {
 	if err != nil || timeout <= 0 || timeout > 30*time.Second {
 		return Config{}, errors.New("shutdown_timeout must be positive and at most 30s")
 	}
-	return Config{ListenAddr: addr.String(), LogLevel: level, ShutdownTimeout: timeout}, nil
+	driver := values["database_driver"]
+	var source string
+	switch driver {
+	case "sqlite":
+		source = values["sqlite_path"]
+		if strings.TrimSpace(source) == "" {
+			return Config{}, errors.New("sqlite_path requires a filesystem path")
+		}
+	case "postgres":
+		source = values["postgres_dsn"]
+		if strings.TrimSpace(source) == "" {
+			return Config{}, errors.New("postgres_dsn is required for PostgreSQL")
+		}
+	default:
+		return Config{}, errors.New("database_driver must be sqlite or postgres")
+	}
+	return Config{ListenAddr: addr.String(), LogLevel: level, ShutdownTimeout: timeout, DatabaseDriver: driver, DatabaseSource: source}, nil
 }
 
 func readFile(path string, values map[string]string) error {

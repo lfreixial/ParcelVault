@@ -23,7 +23,7 @@ run = "go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./..."
 
 [tasks.fmt-check]
 run = '''
-files=$(gofmt -l cmd internal) || exit 1
+files=$(gofmt -l cmd internal migrations) || exit 1
 if [ -n "$files" ]; then
     printf '%s\n' "$files"
     exit 1
