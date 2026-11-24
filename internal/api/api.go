@@ -2,19 +2,20 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/lfreixial/ParcelVault/internal/version"
 )
 
-func New(ready func() bool) http.Handler {
+func New(ready func(context.Context) bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", readOnly(func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}))
-	mux.HandleFunc("/readyz", readOnly(func(w http.ResponseWriter, _ *http.Request) {
-		if !ready() {
+	mux.HandleFunc("/readyz", readOnly(func(w http.ResponseWriter, r *http.Request) {
+		if !ready(r.Context()) {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable"})
 			return
 		}

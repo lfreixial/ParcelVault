@@ -10,6 +10,14 @@
 !internal/api/*.go
 !internal/config/
 !internal/config/*.go
+!internal/database/
+!internal/database/*.go
+!migrations/
+!migrations/embed.go
+!migrations/postgres/
+!migrations/postgres/*.sql
+!migrations/sqlite/
+!migrations/sqlite/*.sql
 !internal/server/
 !internal/server/*.go
 !internal/version/

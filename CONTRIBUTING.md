@@ -1,13 +1,13 @@
 # Contributing
 
-Start with the [development instructions](AGENTS.md) and the [design specification and roadmap](ParcelVault.md). Version 0.0.1 covers the process and its operational API. Authentication, persistence, clients and courier adapters belong to later milestones.
+Start with the [development instructions](AGENTS.md) and the [design specification and roadmap](ParcelVault.md). Version 0.0.2 adds database connections and startup migrations. Set `PARCELVAULT_TEST_POSTGRES_DSN` to a disposable database to include PostgreSQL integration tests in the checks.
 
 Use mise and Git. Run `mise trust` and `mise install` from the repository root to set up Go. Install Gitleaks v8 and run `mise run hooks` once per clone to enable the staged secret scan. This sets the repository-local `core.hooksPath` to `.githooks`. Teams with an existing hook chain can call `.githooks/pre-commit` from that chain.
 
 Run these checks before opening a pull request.
 
 ```sh
-mise exec -- gofmt -w cmd internal
+mise exec -- gofmt -w cmd internal migrations
 mise run check
 gitleaks git --redact --no-banner --log-opts="--all"
 mise run vuln

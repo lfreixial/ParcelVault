@@ -57,7 +57,7 @@ jobs:
           docker compose up --build --wait --wait-timeout 90
           curl -fsS http://127.0.0.1:8080/healthz | jq -e '. == {"status":"ok"}'
           curl -fsS http://127.0.0.1:8080/readyz | jq -e '. == {"status":"ready"}'
-          curl -fsS http://127.0.0.1:8080/api/v1/version | jq -e '. == {"version":"0.0.1"}'
+          curl -fsS http://127.0.0.1:8080/api/v1/version | jq -e '. == {"version":"0.0.2"}'
           id=$(docker compose ps -q parcelvault)
           docker compose stop parcelvault
           test "$(docker inspect --format '{{.State.ExitCode}}' "$id")" = 0

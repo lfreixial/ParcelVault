@@ -1,10 +1,12 @@
-# ParcelVault v0.0.1
+# ParcelVault v0.0.2
 
 ## Repository architecture
 
 ```mermaid
 flowchart TD
     Main[cmd/parcelvault] --> Config[internal/config]
+    Main --> DB[internal/database]
+    DB --> SQL[Embedded migrations for SQLite and PostgreSQL]
     Main --> API[internal/api]
     Main --> Server[internal/server]
     API --> Version[internal/version]
@@ -21,7 +23,9 @@ flowchart TD
     Start[Install SIGINT and SIGTERM handlers] --> Config[Merge defaults, JSON file and environment]
     Config --> Validate{Configuration valid?}
     Validate -->|No| Fail[Log sanitized error and exit 1]
-    Validate -->|Yes| Bind{Listener opened?}
+    Validate -->|Yes| Storage{Database connected and migrated?}
+    Storage -->|No| Fail
+    Storage -->|Yes| Bind{Listener opened?}
     Bind -->|No| Fail
     Bind -->|Yes| Serve[Serve HTTP and report ready]
     Serve --> Signal[Receive SIGINT or SIGTERM]
@@ -42,8 +46,23 @@ flowchart LR
     subgraph Docker[Docker Compose]
         Port --> App[ParcelVault on container port 8080]
         Probe[Container health check] -->|GET /readyz| App
+        App -->|SQLite WAL| Volume[(parcelvault-data)]
         App -->|stderr| Logs[Size-limited Docker logs]
     end
 ```
 
 The proxy is optional infrastructure supplied by the operator. The application runs as UID and GID 65532 with a read-only root filesystem.
+
+## Initial schema
+
+```mermaid
+erDiagram
+    USERS {
+        uuid id PK
+        text username UK
+        text password_hash
+        timestamp created_at
+    }
+```
+
+SQLite stores the ID and UTC timestamp as text. PostgreSQL uses UUID and TIMESTAMPTZ. Goose tracks schema versions in its own table.
