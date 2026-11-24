@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+if command -v gitleaks >/dev/null 2>&1; then
+    scanner=gitleaks
+else
+    scanner=$(git rev-parse --git-path parcelvault-tools/gitleaks)
+    if [ ! -x "$scanner" ]; then
+        echo "Install Gitleaks v8 to scan staged changes before committing." >&2
+        exit 1
+    fi
+fi
+exec "$scanner" git --pre-commit --staged --redact --no-banner

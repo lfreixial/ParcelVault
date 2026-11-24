@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: ParcelVault operational API
+  version: 0.0.1
+  description: Public process probes and application version. Requests have no body.
+security: []
+paths:
+  /healthz:
+    get:
+      operationId: getLiveness
+      responses:
+        '200':
+          description: The process can serve HTTP.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, const: ok}
+        '413': {$ref: '#/components/responses/BodyRejected'}
+    head:
+      operationId: headLiveness
+      responses:
+        '200': {description: The process can serve HTTP.}
+        '413': {description: The request contained a body.}
+  /readyz:
+    get:
+      operationId: getReadiness
+      responses:
+        '200':
+          description: The server is ready.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, const: ready}
+        '503':
+          description: The server is shutting down.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, const: unavailable}
+        '413': {$ref: '#/components/responses/BodyRejected'}
+    head:
+      operationId: headReadiness
+      responses:
+        '200': {description: The server is ready.}
+        '503': {description: The server is shutting down.}
+        '413': {description: The request contained a body.}
+  /api/v1/version:
+    get:
+      operationId: getVersion
+      responses:
+        '200':
+          description: Application release version.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version]
+                properties:
+                  version: {type: string, examples: ['0.0.1']}
+        '413': {$ref: '#/components/responses/BodyRejected'}
+    head:
+      operationId: headVersion
+      responses:
+        '200': {description: Application version is available.}
+        '413': {description: The request contained a body.}
+components:
+  schemas:
+    Problem:
+      type: object
+      description: Unknown routes return 404. Unsupported methods return 405 with an Allow header.
+      required: [title, status]
+      properties:
+        title: {type: string}
+        status: {type: integer}
+  responses:
+    BodyRejected:
+      description: The request contained a body.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}

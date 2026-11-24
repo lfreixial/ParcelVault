@@ -1,0 +1,16 @@
+# Allow only production Go source and the module manifest into the build context.
+**
+!go.mod
+!cmd/
+!cmd/parcelvault/
+!cmd/parcelvault/*.go
+!internal/
+!internal/api/
+!internal/api/*.go
+!internal/config/
+!internal/config/*.go
+!internal/server/
+!internal/server/*.go
+!internal/version/
+!internal/version/*.go
+**/*_test.go

@@ -1,0 +1,39 @@
+[tools]
+go = "1.27.4"
+
+[tasks.build]
+run = "go build -mod=readonly -trimpath -buildvcs=false -o bin/parcelvault ./cmd/parcelvault"
+
+[tasks.start]
+description = "Build the ParcelVault image and run it with Docker Compose"
+run = "docker compose up --build parcelvault"
+
+[tasks.test]
+run = "go test ./..."
+
+[tasks.race]
+run = "go test -race ./..."
+
+[tasks.vet]
+run = "go vet ./..."
+
+[tasks.vuln]
+description = "Check Go code against the vulnerability database"
+run = "go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./..."
+
+[tasks.fmt-check]
+run = '''
+files=$(gofmt -l cmd internal) || exit 1
+if [ -n "$files" ]; then
+    printf '%s\n' "$files"
+    exit 1
+fi
+'''
+
+[tasks.check]
+description = "Check formatting, vet, run tests with and without race detection, and build"
+depends = ["fmt-check", "vet", "test", "race", "build"]
+
+[tasks.hooks]
+description = "Enable the staged secret scan in this checkout"
+run = "git config --local core.hooksPath .githooks"
